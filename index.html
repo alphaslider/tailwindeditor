@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Waveform Studio - Black Metal Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        studio: {
+                            950: '#050508',
+                            900: '#0d0e12',
+                            800: '#15171f',
+                            700: '#222530',
+                            600: '#313645',
+                            accent: 'var(--theme-accent, #e11d48)', // default crimson black metal
+                            accentHover: 'var(--theme-accent-hover, #be123c)',
+                            danger: '#ef4444',
+                            success: '#10b981',
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --theme-accent: #e11d48;
+            --theme-accent-hover: #be123c;
+            --theme-accent-glow: rgba(225, 29, 72, 0.35);
+            --theme-waveform: #f43f5e;
+        }
+        body {
+            overscroll-behavior-y: none;
+            touch-action: pan-x pan-y;
+            user-select: none;
+            -webkit-user-select: none;
+            background: linear-gradient(135deg, #050508 0%, #0d0e12 100%);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d0e12;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #222530;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--theme-accent);
+        }
+        .glow-accent {
+            box-shadow: 0 0 20px var(--theme-accent-glow);
+        }
+        /* Rubber / Matte dark texture feel */
+        .rubber-panel {
+            background: #0d0e12;
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.04), 0 4px 12px rgba(0,0,0,0.6);
+            border: 1px solid #1a1d26;
+        }
+    </style>
+</head>
+<body class="h-full bg-studio-950 text-slate-200 font-mono flex flex-col overflow-hidden">
+
+    <!-- Top Menu Bar: File, Edit, Status (No Buttons, Clean Vertical Separators) -->
+    <header class="bg-studio-900 border-b border-studio-800 px-3 py-2.5 flex items-center justify-between shrink-0 select-none rubber-panel">
+        <div class="flex items-center space-x-3">
+            <div class="w-2.5 h-2.5 rounded-full bg-studio-accent animate-pulse shadow-[0_0_10px_var(--theme-accent)]"></div>
+            
+            <!-- FILE Menu (Dropdown Link / Label) -->
+            <div class="relative">
+                <button id="menu-file-btn" class="text-xs font-bold px-2 py-1 rounded hover:bg-studio-800 text-slate-300 hover:text-white transition tracking-wider">FILE</button>
+                <div id="menu-file-dropdown" class="absolute left-0 mt-1 w-44 bg-studio-900 border border-studio-700 rounded-lg shadow-2xl py-1.5 hidden z-50 text-xs rubber-panel">
+                    <label class="block px-3 py-2 hover:bg-studio-800 cursor-pointer text-slate-200 flex items-center justify-between">
+                        <span>Load Audio File...</span>
+                        <input type="file" id="audio-file-input" accept="audio/*" class="hidden">
+                    </label>
+                    <button id="menu-export" class="w-full text-left px-3 py-2 hover:bg-studio-800 text-studio-success">Export WAV...</button>
+                    <div class="h-px bg-studio-800 my-1"></div>
+                    <button id="menu-clear" class="w-full text-left px-3 py-2 hover:bg-studio-800 text-studio-danger">Clear Project</button>
+                </div>
+            </div>
+
+            <!-- Vertical Separator -->
+            <div class="w-px h-4 bg-studio-700"></div>
+
+            <!-- EDIT Menu (Dropdown Link / Label) -->
+            <div class="relative">
+                <button id="menu-edit-btn" class="text-xs font-bold px-2 py-1 rounded hover:bg-studio-800 text-slate-300 hover:text-white transition tracking-wider">EDIT</button>
+                <div id="menu-edit-dropdown" class="absolute left-0 mt-1 w-48 bg-studio-900 border border-studio-700 rounded-lg shadow-2xl py-1.5 hidden z-50 text-xs rubber-panel">
+                    <button id="edit-undo" class="w-full text-left px-3 py-2 hover:bg-studio-800 text-slate-300 flex justify-between"><span>Undo</span><span class="text-slate-500">Ctrl+Z</span></button>
+                    <button id="edit-redo" class="w-full text-left px-3 py-2 hover:bg-studio-800 text-slate-300 flex justify-between"><span>Redo</span><span class="text-slate-500">Ctrl+Y</span></button>
+                    <div class="h-px bg-studio-800 my-1"></div>
+                    <button id="edit-cut" class="w-full text-left px-3 py-2 hover:bg-studio-800 text-slate-300">Cut Active Side</button>
+                    <button id="edit-copy" class="w-full text-left px-3 py-2 hover:bg-studio-800 text-slate-300">Copy Active Side</button>
+                    <button id="edit-paste" class="w-full text-left px-3 py-2 hover:bg-studio-800 text-slate-300">Paste at Playhead</button>
+                    <div class="h-px bg-studio-800 my-1"></div>
+                    <button id="edit-fade-in" class="w-full text-left px-3 py-2 hover:bg-studio-800 text-slate-300">Fade In Selection</button>
+                    <button id="edit-fade-out" class="w-full text-left px-3 py-2 hover:bg-studio-800 text-slate-300">Fade Out Selection</button>
+                    <div class="h-px bg-studio-800 my-1"></div>
+                    <button id="edit-fx" class="w-full text-left px-3 py-2 hover:bg-studio-800 text-studio-accent font-bold">FX Processor...</button>
+                    <div class="h-px bg-studio-800 my-1"></div>
+                    <button id="edit-theme" class="w-full text-left px-3 py-2 hover:bg-studio-800 text-slate-300">Color Theme Wheel...</button>
+                </div>
+            </div>
+
+            <!-- Vertical Separator -->
+            <div class="w-px h-4 bg-studio-700"></div>
+
+            <span id="file-label" class="hidden md:inline text-xs bg-studio-800/80 text-slate-400 px-2.5 py-1 rounded border border-studio-700/60 truncate max-w-[180px]">No file loaded</span>
+        </div>
+
+        <div class="flex items-center space-x-3 text-xs text-slate-400">
+            <span id="sample-rate-info" class="hidden lg:inline">44.1kHz / Black Metal Studio</span>
+            <button id="btn-help" class="bg-studio-800/80 hover:bg-studio-700 text-slate-300 px-2.5 py-1 rounded border border-studio-700 transition">Help</button>
+        </div>
+    </header>
+
+    <!-- Transport & Action Bar -->
+    <section class="bg-studio-900/95 backdrop-blur border-b border-studio-800 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shrink-0 rubber-panel">
+        <div class="flex items-center space-x-2">
+            <!-- Record Button -->
+            <button id="btn-record" title="Record Microphone (R)" class="flex items-center space-x-1.5 bg-studio-800 hover:bg-studio-700 text-studio-danger border border-studio-700 px-3 py-2 rounded-lg font-bold text-xs transition active:scale-95 shadow-inner">
+                <span class="w-3 h-3 rounded-full bg-studio-danger inline-block" id="record-dot"></span>
+                <span class="hidden xs:inline" id="rec-text">REC</span>
+            </button>
+            <!-- Play Button -->
+            <button id="btn-play" title="Play / Pause (Space)" class="flex items-center space-x-1.5 bg-studio-accent hover:bg-studio-accentHover text-studio-950 px-4 py-2 rounded-lg font-bold text-xs transition active:scale-95 glow-accent">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <span id="play-text">PLAY</span>
+            </button>
+            <!-- Stop Button -->
+            <button id="btn-stop" title="Stop & Return to Start" class="flex items-center space-x-1 bg-studio-800 hover:bg-studio-700 text-slate-200 border border-studio-700 px-3 py-2 rounded-lg font-bold text-xs transition active:scale-95 shadow-inner">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+                <span class="hidden xs:inline">STOP</span>
+            </button>
+            <!-- Loop Toggle -->
+            <button id="btn-loop" title="Toggle Loop Selection" class="flex items-center space-x-1 bg-studio-800 hover:bg-studio-700 text-slate-400 border border-studio-700 px-3 py-2 rounded-lg font-bold text-xs transition active:scale-95 shadow-inner">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                <span id="loop-status" class="text-[10px]">LOOP: OFF</span>
+            </button>
+        </div>
+
+        <!-- Timecode Display -->
+        <div class="bg-studio-950 border border-studio-800 px-3 py-1.5 rounded-lg flex items-center space-x-2 shadow-inner">
+            <span class="text-studio-accent font-bold text-sm tracking-widest drop-shadow-[0_0_8px_var(--theme-accent)]" id="timecode-display">00:00.000</span>
+            <span class="text-slate-500 text-xs">/ <span id="duration-display">00:00.000</span></span>
+        </div>
+
+        <!-- Zoom & Volume Controls -->
+        <div class="flex items-center space-x-2">
+            <div class="hidden md:flex items-center bg-studio-800 rounded-lg border border-studio-700 p-0.5 shadow-inner">
+                <button id="btn-zoom-out" title="Zoom Out" class="px-2 py-1 text-slate-300 hover:text-white text-xs font-bold">-</button>
+                <span id="zoom-level" class="px-2 text-xs text-slate-400">1.0x</span>
+                <button id="btn-zoom-in" title="Zoom In" class="px-2 py-1 text-slate-300 hover:text-white text-xs font-bold">+</button>
+            </div>
+            <div class="hidden lg:flex items-center space-x-1.5 bg-studio-800 border border-studio-700 px-2.5 py-1 rounded-lg shadow-inner">
+                <span class="text-[10px] text-slate-400">VOL</span>
+                <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1" class="w-16 accent-studio-accent cursor-pointer">
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Timeline Area with Left Gutter Channel Selector -->
+    <main class="flex-1 relative bg-studio-950 flex flex-col overflow-hidden" id="timeline-container">
+        <!-- Ruler Canvas Container -->
+        <div class="flex bg-studio-900 border-b border-studio-800 shrink-0 h-8 rubber-panel">
+            <div class="w-20 bg-studio-900 border-r border-studio-800 flex items-center justify-center text-[10px] text-slate-400 font-bold tracking-wider shrink-0" id="gutter-title-lbl">CHANNELS</div>
+            <div class="flex-1 relative overflow-hidden">
+                <canvas id="ruler-canvas" class="absolute top-0 left-0 w-full h-full cursor-pointer"></canvas>
+            </div>
+        </div>
+
+        <!-- Waveform Canvas Scroll/Pan Viewport with Left Gutter -->
+        <div class="flex-1 flex overflow-hidden">
+            <!-- Left Gutter: Dynamic Mute/Active Selectors -->
+            <div class="w-20 bg-studio-900 border-r border-studio-800 flex flex-col shrink-0 select-none z-10 rubber-panel" id="channel-gutter">
+                <div id="gutter-ch1" class="flex-1 border-b border-studio-800 flex flex-col items-center justify-center p-1">
+                    <span class="text-[10px] text-slate-400 mb-1 font-bold" id="lbl-ch1">CH 1 (L)</span>
+                    <button id="btn-select-left" class="w-full py-1 text-[10px] font-bold rounded bg-studio-accent text-studio-950 border border-studio-accent transition active:scale-95 shadow-md" data-channel="0">ACTIVE</button>
+                </div>
+                <div id="gutter-ch2" class="flex-1 flex flex-col items-center justify-center p-1">
+                    <span class="text-[10px] text-slate-400 mb-1 font-bold" id="lbl-ch2">CH 2 (R)</span>
+                    <button id="btn-select-right" class="w-full py-1 text-[10px] font-bold rounded bg-studio-accent text-studio-950 border border-studio-accent transition active:scale-95 shadow-md" data-channel="1">ACTIVE</button>
+                </div>
+            </div>
+
+            <!-- Waveform Viewport -->
+            <div class="flex-1 relative overflow-x-auto overflow-y-hidden" id="waveform-scroll-area">
+                <div id="canvas-wrapper" class="relative h-full min-w-full">
+                    <canvas id="waveform-canvas" class="absolute top-0 left-0 h-full w-full cursor-crosshair"></canvas>
+                    
+                    <!-- Floating Selection Gain Badge with Expandable Slider on Hover -->
+                    <div id="selection-gain-container" class="absolute hidden z-30 select-none group">
+                        <div id="selection-gain-badge" class="bg-studio-950/95 backdrop-blur border border-studio-accent px-2.5 py-1.5 rounded-lg shadow-2xl flex items-center space-x-2 cursor-pointer">
+                            <svg class="w-3.5 h-3.5 text-studio-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                            <span class="text-[10px] text-slate-200 font-bold" id="gain-badge-label">GAIN: 1.0x</span>
+                        </div>
+                        <!-- Hover Slider Popup -->
+                        <div class="absolute left-0 mt-1 hidden group-hover:block bg-studio-900 border border-studio-700 p-2.5 rounded-lg shadow-2xl w-40 rubber-panel">
+                            <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                                <span>Selection Gain</span>
+                                <span id="gain-slider-val" class="text-studio-accent font-bold">1.0x</span>
+                            </div>
+                            <input type="range" id="selection-gain-slider" min="0" max="2" step="0.05" value="1" class="w-full accent-studio-accent cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating Quick Tools Mobile Bar -->
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-studio-900/90 backdrop-blur border border-studio-700 px-4 py-2 rounded-full shadow-2xl flex items-center space-x-4 md:hidden z-20 rubber-panel">
+            <button id="mob-zoom-out" class="text-slate-300 font-bold px-2 py-1 text-sm">-</button>
+            <span id="mob-zoom-label" class="text-xs text-studio-accent font-bold">1.0x</span>
+            <button id="mob-zoom-in" class="text-slate-300 font-bold px-2 py-1 text-sm">+</button>
+            <div class="w-px h-4 bg-studio-700"></div>
+            <button id="mob-btn-loop" class="text-xs text-slate-300 font-bold px-2 py-1">LOOP</button>
+        </div>
+    </main>
+
+    <!-- Color Theme Wheel Modal -->
+    <div id="theme-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-studio-900 border border-studio-700 rounded-xl max-w-sm w-full p-6 relative shadow-2xl text-center rubber-panel">
+            <button id="btn-close-theme" class="absolute top-4 right-4 text-slate-400 hover:text-white font-bold text-lg">&times;</button>
+            <h2 class="text-base font-bold text-studio-accent mb-4">Color Theme Selector</h2>
+            <div class="flex justify-center mb-4">
+                <canvas id="color-wheel-canvas" width="200" height="200" class="cursor-crosshair rounded-full border-4 border-studio-800 shadow-inner"></canvas>
+            </div>
+            <div class="flex items-center justify-center space-x-3 mb-4">
+                <span class="text-xs text-slate-400">Presets:</span>
+                <button class="w-5 h-5 rounded-full bg-rose-600 border border-white/20 theme-preset" data-color="#e11d48"></button>
+                <button class="w-5 h-5 rounded-full bg-amber-500 border border-white/20 theme-preset" data-color="#f59e0b"></button>
+                <button class="w-5 h-5 rounded-full bg-emerald-500 border border-white/20 theme-preset" data-color="#10b981"></button>
+                <button class="w-5 h-5 rounded-full bg-fuchsia-500 border border-white/20 theme-preset" data-color="#d946ef"></button>
+                <button class="w-5 h-5 rounded-full bg-purple-600 border border-white/20 theme-preset" data-color="#9333ea"></button>
+            </div>
+            <button id="btn-apply-theme" class="w-full bg-studio-accent text-studio-950 font-bold text-xs py-2.5 rounded-lg transition shadow-lg">Apply Theme</button>
+        </div>
+    </div>
+
+    <!-- FX Processor Modal -->
+    <div id="fx-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-studio-900 border border-studio-700 rounded-xl max-w-md w-full p-6 relative shadow-2xl rubber-panel">
+            <button id="btn-close-fx" class="absolute top-4 right-4 text-slate-400 hover:text-white font-bold text-lg">&times;</button>
+            <h2 class="text-base font-bold text-studio-accent mb-2">FX Processor Rack</h2>
+            <p class="text-xs text-slate-400 mb-4">Real-time DSP modules for active channel selection.</p>
+            <div class="space-y-3 text-xs text-slate-300 mb-6">
+                <div class="bg-studio-950 p-3 rounded border border-studio-800 flex items-center justify-between">
+                    <span>Lowpass Filter (Cutoff)</span>
+                    <input type="range" min="200" max="20000" value="10000" class="accent-studio-accent w-32">
+                </div>
+                <div class="bg-studio-950 p-3 rounded border border-studio-800 flex items-center justify-between">
+                    <span>Gain / Boost</span>
+                    <input type="range" min="0.1" max="2" step="0.1" value="1" class="accent-studio-accent w-32">
+                </div>
+            </div>
+            <button id="btn-apply-fx" class="w-full bg-studio-accent text-studio-950 font-bold text-xs py-2.5 rounded-lg transition shadow-lg">Process & Apply FX</button>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-studio-900 border border-studio-700 rounded-xl max-w-md w-full p-6 relative shadow-2xl rubber-panel">
+            <button id="btn-close-help" class="absolute top-4 right-4 text-slate-400 hover:text-white font-bold text-lg">&times;</button>
+            <h2 class="text-lg font-bold text-studio-accent mb-3">Waveform Studio Guide</h2>
+            <ul class="space-y-2 text-xs text-slate-300 mb-6">
+                <li class="flex items-start space-x-2">
+                    <span class="bg-studio-800 text-studio-accent px-1.5 py-0.5 rounded font-bold">BLACK METAL</span>
+                    <span>Ultra-smooth glowing anti-aliased waveforms with rubberized dark aesthetics.</span>
+                </li>
+                <li class="flex items-start space-x-2">
+                    <span class="bg-studio-800 text-studio-accent px-1.5 py-0.5 rounded font-bold">MENUS</span>
+                    <span>Clean vertical separators between FILE and EDIT text links.</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div id="msg-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-studio-900 border border-studio-700 rounded-xl max-w-sm w-full p-5 text-center shadow-2xl rubber-panel">
+            <p id="msg-text" class="text-sm text-slate-200 mb-4"></p>
+            <button id="msg-ok" class="bg-studio-accent hover:bg-studio-accentHover text-studio-950 font-bold text-xs px-5 py-2 rounded-lg transition shadow-lg">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        let audioCtx = null;
+        let audioBuffer = null;
+        let sourceNode = null;
+        
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let recordingStartTime = 0;
+        let liveAnalyser = null;
+        let liveStream = null;
+        let liveAnimFrame = null;
+        let livePCMBuffer = [];
+
+        let isPlaying = false;
+        let isLooping = false;
+        
+        let playbackStartTime = 0;
+        let playbackOffset = 0;
+        let animationFrameId = null;
+
+        // Selection & Zoom & Channel Focus
+        let selectionStart = null; 
+        let selectionEnd = null;   
+        let isDraggingSelection = false;
+        let zoomScale = 1.0; 
+
+        let activeChannels = [true, true]; // [Left, Right]
+        let originalSelectionSamples = null;
+
+        let clipboardBuffer = null;
+        let undoStack = [];
+        let redoStack = [];
+
+        // UI Elements
+        const menuFileBtn = document.getElementById('menu-file-btn');
+        const menuFileDropdown = document.getElementById('menu-file-dropdown');
+        const menuEditBtn = document.getElementById('menu-edit-btn');
+        const menuEditDropdown = document.getElementById('menu-edit-dropdown');
+
+        const btnRecord = document.getElementById('btn-record');
+        const recordDot = document.getElementById('record-dot');
+        const recText = document.getElementById('rec-text');
+        const btnPlay = document.getElementById('btn-play');
+        const playText = document.getElementById('play-text');
+        const btnStop = document.getElementById('btn-stop');
+        const btnLoop = document.getElementById('btn-loop');
+        const loopStatus = document.getElementById('loop-status');
+        const timecodeDisplay = document.getElementById('timecode-display');
+        const durationDisplay = document.getElementById('duration-display');
+        const volumeSlider = document.getElementById('volume-slider');
+        const fileInput = document.getElementById('audio-file-input');
+        const fileLabel = document.getElementById('file-label');
+        const menuExport = document.getElementById('menu-export');
+        const menuClear = document.getElementById('menu-clear');
+
+        const btnSelectLeft = document.getElementById('btn-select-left');
+        const btnSelectRight = document.getElementById('btn-select-right');
+        const gutterCh2 = document.getElementById('gutter-ch2');
+        const lblCh1 = document.getElementById('lbl-ch1');
+        
+        const selectionGainContainer = document.getElementById('selection-gain-container');
+        const gainBadgeLabel = document.getElementById('gain-badge-label');
+        const selectionGainSlider = document.getElementById('selection-gain-slider');
+        const gainSliderVal = document.getElementById('gain-slider-val');
+
+        const editUndo = document.getElementById('edit-undo');
+        const editRedo = document.getElementById('edit-redo');
+        const editCut = document.getElementById('edit-cut');
+        const editCopy = document.getElementById('edit-copy');
+        const editPaste = document.getElementById('edit-paste');
+        const editFadeIn = document.getElementById('edit-fade-in');
+        const editFadeOut = document.getElementById('edit-fade-out');
+        const editFx = document.getElementById('edit-fx');
+        const editTheme = document.getElementById('edit-theme');
+
+        const btnZoomIn = document.getElementById('btn-zoom-in');
+        const btnZoomOut = document.getElementById('btn-zoom-out');
+        const zoomLevelDisplay = document.getElementById('zoom-level');
+        const mobZoomIn = document.getElementById('mob-zoom-in');
+        const mobZoomOut = document.getElementById('mob-zoom-out');
+        const mobZoomLabel = document.getElementById('mob-zoom-label');
+        const mobBtnLoop = document.getElementById('mob-btn-loop');
+
+        const btnHelp = document.getElementById('btn-help');
+        const helpModal = document.getElementById('help-modal');
+        const btnCloseHelp = document.getElementById('btn-close-help');
+
+        const themeModal = document.getElementById('theme-modal');
+        const btnCloseTheme = document.getElementById('btn-close-theme');
+        const btnApplyTheme = document.getElementById('btn-apply-theme');
+        const colorWheelCanvas = document.getElementById('color-wheel-canvas');
+
+        const fxModal = document.getElementById('fx-modal');
+        const btnCloseFx = document.getElementById('btn-close-fx');
+        const btnApplyFx = document.getElementById('btn-apply-fx');
+
+        const msgModal = document.getElementById('msg-modal');
+        const msgText = document.getElementById('msg-text');
+        const msgOk = document.getElementById('msg-ok');
+
+        const waveformCanvas = document.getElementById('waveform-canvas');
+        const rulerCanvas = document.getElementById('ruler-canvas');
+        const waveformScrollArea = document.getElementById('waveform-scroll-area');
+        const canvasWrapper = document.getElementById('canvas-wrapper');
+
+        function showMessage(text) {
+            msgText.textContent = text;
+            msgModal.classList.remove('hidden');
+        }
+        msgOk.addEventListener('click', () => msgModal.classList.add('hidden'));
+
+        // Dropdowns
+        menuFileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menuFileDropdown.classList.toggle('hidden');
+            menuEditDropdown.classList.add('hidden');
+        });
+        menuEditBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menuEditDropdown.classList.toggle('hidden');
+            menuFileDropdown.classList.add('hidden');
+        });
+        window.addEventListener('click', () => {
+            menuFileDropdown.classList.add('hidden');
+            menuEditDropdown.classList.add('hidden');
+        });
+
+        // --- Channel Gutter UI Adaptation ---
+        function updateGutterUI() {
+            const numChannels = audioBuffer ? audioBuffer.numberOfChannels : 2;
+            if (numChannels === 1) {
+                gutterCh2.style.display = 'none';
+                lblCh1.textContent = "MONO";
+            } else {
+                gutterCh2.style.display = 'flex';
+                lblCh1.textContent = "CH 1 (L)";
+            }
+
+            if (activeChannels[0]) {
+                btnSelectLeft.textContent = "ACTIVE";
+                btnSelectLeft.className = "w-full py-1 text-[10px] font-bold rounded bg-studio-accent text-studio-950 border border-studio-accent transition active:scale-95 shadow-md";
+            } else {
+                btnSelectLeft.textContent = "MUTED";
+                btnSelectLeft.className = "w-full py-1 text-[10px] font-bold rounded bg-studio-800 text-slate-500 border border-studio-700 transition active:scale-95";
+            }
+
+            if (numChannels > 1) {
+                if (activeChannels[1]) {
+                    btnSelectRight.textContent = "ACTIVE";
+                    btnSelectRight.className = "w-full py-1 text-[10px] font-bold rounded bg-studio-accent text-studio-950 border border-studio-accent transition active:scale-95 shadow-md";
+                } else {
+                    btnSelectRight.textContent = "MUTED";
+                    btnSelectRight.className = "w-full py-1 text-[10px] font-bold rounded bg-studio-800 text-slate-500 border border-studio-700 transition active:scale-95";
+                }
+            }
+        }
+
+        btnSelectLeft.addEventListener('click', () => {
+            activeChannels[0] = !activeChannels[0];
+            updateGutterUI();
+        });
+        btnSelectRight.addEventListener('click', () => {
+            activeChannels[1] = !activeChannels[1];
+            updateGutterUI();
+        });
+
+        // --- Audio Context ---
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContextClass();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // --- Undo / Redo ---
+        function saveStateToUndo() {
+            if (!audioBuffer) return;
+            const clone = audioCtx.createBuffer(audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate);
+            for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+                clone.copyToChannel(audioBuffer.getChannelData(c), c);
+            }
+            undoStack.push(clone);
+            if (undoStack.length > 20) undoStack.shift();
+            redoStack = []; 
+        }
+
+        editUndo.addEventListener('click', () => {
+            if (undoStack.length === 0) {
+                showMessage("Nothing to undo.");
+                return;
+            }
+            const currentClone = audioCtx.createBuffer(audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate);
+            for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+                currentClone.copyToChannel(audioBuffer.getChannelData(c), c);
+            }
+            redoStack.push(currentClone);
+
+            audioBuffer = undoStack.pop();
+            selectionStart = null;
+            selectionEnd = null;
+            playbackOffset = 0;
+            updateDurationDisplay();
+            updateGutterUI();
+            resizeCanvases();
+            showMessage("Undo executed.");
+        });
+
+        editRedo.addEventListener('click', () => {
+            if (redoStack.length === 0) {
+                showMessage("Nothing to redo.");
+                return;
+            }
+            const currentClone = audioCtx.createBuffer(audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate);
+            for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+                currentClone.copyToChannel(audioBuffer.getChannelData(c), c);
+            }
+            undoStack.push(currentClone);
+
+            audioBuffer = redoStack.pop();
+            selectionStart = null;
+            selectionEnd = null;
+            playbackOffset = 0;
+            updateDurationDisplay();
+            updateGutterUI();
+            resizeCanvases();
+            showMessage("Redo executed.");
+        });
+
+        // --- Time Formatting ---
+        function formatTime(seconds) {
+            if (isNaN(seconds) || seconds < 0) seconds = 0;
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            const millis = Math.floor((seconds % 1) * 1000);
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(millis).padStart(3, '0')}`;
+        }
+
+        function updateDurationDisplay() {
+            if (!audioBuffer) {
+                durationDisplay.textContent = "00:00.000";
+                timecodeDisplay.textContent = "00:00.000";
+                return;
+            }
+            durationDisplay.textContent = formatTime(audioBuffer.duration);
+        }
+
+        // --- Canvas Sizing & Rendering (Ultra-Smooth Glowing Waveforms) ---
+        function resizeCanvases() {
+            const containerWidth = waveformScrollArea.clientWidth;
+            const containerHeight = waveformScrollArea.clientHeight;
+            
+            const totalWidth = Math.max(containerWidth * zoomScale, containerWidth);
+            canvasWrapper.style.width = `${totalWidth}px`;
+            
+            waveformCanvas.width = totalWidth * window.devicePixelRatio;
+            waveformCanvas.height = containerHeight * window.devicePixelRatio;
+            waveformCanvas.style.width = `${totalWidth}px`;
+            waveformCanvas.style.height = `${containerHeight}px`;
+
+            rulerCanvas.width = totalWidth * window.devicePixelRatio;
+            rulerCanvas.height = rulerCanvas.parentElement.clientHeight * window.devicePixelRatio;
+            rulerCanvas.style.width = `${totalWidth}px`;
+            rulerCanvas.style.height = `${rulerCanvas.parentElement.clientHeight}px`;
+
+            drawWaveform();
+            drawRuler();
+            updateSelectionBadgePosition();
+        }
+
+        window.addEventListener('resize', resizeCanvases);
+
+        function drawWaveform() {
+            const canvas = waveformCanvas;
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#050508';
+            ctx.fillRect(0, 0, width, height);
+
+            const waveColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-waveform').trim() || '#f43f5e';
+            const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-accent').trim() || '#e11d48';
+
+            if (isRecording) {
+                const numChannels = 2;
+                const trackHeight = height / numChannels;
+
+                for (let c = 0; c < numChannels; c++) {
+                    const channelCenter = (c * trackHeight) + (trackHeight / 2);
+                    const amp = trackHeight / 2;
+
+                    ctx.fillStyle = '#15171f';
+                    ctx.fillRect(0, channelCenter - 0.5 * window.devicePixelRatio, width, 1 * window.devicePixelRatio);
+
+                    if (livePCMBuffer.length > 0) {
+                        ctx.save();
+                        ctx.shadowBlur = 12 * window.devicePixelRatio;
+                        ctx.shadowColor = waveColor;
+                        ctx.strokeStyle = waveColor;
+                        ctx.lineWidth = 2 * window.devicePixelRatio;
+                        ctx.lineJoin = 'round';
+                        ctx.lineCap = 'round';
+                        ctx.beginPath();
+
+                        const step = Math.ceil(livePCMBuffer.length / width);
+                        for (let i = 0; i < width; i += 2) {
+                            let min = 1.0, max = -1.0;
+                            for (let j = 0; j < step; j++) {
+                                const idx = (i * step) + j;
+                                if (idx < livePCMBuffer.length) {
+                                    const val = livePCMBuffer[idx];
+                                    if (val < min) min = val;
+                                    if (val > max) max = val;
+                                }
+                            }
+                            ctx.moveTo(i, channelCenter + (min * amp));
+                            ctx.lineTo(i, channelCenter + (max * amp));
+                        }
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+
+                    ctx.fillStyle = '#64748b';
+                    ctx.font = `${10 * window.devicePixelRatio}px monospace`;
+                    ctx.fillText(c === 0 ? 'CH 1 (L) [REC]' : 'CH 2 (R) [REC]', 10 * window.devicePixelRatio, (c * trackHeight) + 16 * window.devicePixelRatio);
+                }
+
+                const elapsed = (Date.now() - recordingStartTime) / 1000;
+                const recPlayheadX = Math.min(width, (elapsed / 10.0) * width);
+                ctx.save();
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = accentColor;
+                ctx.strokeStyle = accentColor;
+                ctx.lineWidth = 2 * window.devicePixelRatio;
+                ctx.beginPath();
+                ctx.moveTo(recPlayheadX, 0);
+                ctx.lineTo(recPlayheadX, height);
+                ctx.stroke();
+                ctx.restore();
+                return;
+            }
+
+            if (!audioBuffer) {
+                ctx.fillStyle = '#313645';
+                ctx.font = `${14 * window.devicePixelRatio}px monospace`;
+                ctx.textAlign = 'center';
+                ctx.fillText("No audio loaded. Go to FILE -> Load Audio or press REC.", width / 2, height / 2);
+                return;
+            }
+
+            const numChannels = audioBuffer.numberOfChannels;
+            const trackHeight = height / numChannels;
+
+            for (let c = 0; c < numChannels; c++) {
+                const rawData = audioBuffer.getChannelData(c);
+                const step = Math.ceil(rawData.length / width);
+                const channelCenter = (c * trackHeight) + (trackHeight / 2);
+                const amp = trackHeight / 2;
+
+                ctx.fillStyle = '#15171f';
+                ctx.fillRect(0, channelCenter - 0.5 * window.devicePixelRatio, width, 1 * window.devicePixelRatio);
+
+                // Glowing smooth path rendering
+                ctx.save();
+                ctx.shadowBlur = 10 * window.devicePixelRatio;
+                ctx.shadowColor = waveColor;
+                ctx.strokeStyle = waveColor;
+                ctx.lineWidth = 2 * window.devicePixelRatio;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+
+                for (let i = 0; i < width; i += 2) {
+                    let min = 1.0;
+                    let max = -1.0;
+                    for (let j = 0; j < step; j++) {
+                        const idx = (i * step) + j;
+                        if (idx < rawData.length) {
+                            const datum = rawData[idx];
+                            if (datum < min) min = datum;
+                            if (datum > max) max = datum;
+                        }
+                    }
+                    const yMin = channelCenter + (min * amp);
+                    const yMax = channelCenter + (max * amp);
+                    ctx.moveTo(i, yMin);
+                    ctx.lineTo(i, yMax);
+                }
+                ctx.stroke();
+                ctx.restore();
+
+                const isTargeted = activeChannels[c];
+                ctx.fillStyle = isTargeted ? accentColor : '#64748b';
+                ctx.font = `${10 * window.devicePixelRatio}px monospace`;
+                ctx.fillText(numChannels > 1 ? (c === 0 ? 'CH 1 (L) [ACTIVE]' : 'CH 2 (R) [ACTIVE]') : 'MONO [ACTIVE]', 10 * window.devicePixelRatio, (c * trackHeight) + 16 * window.devicePixelRatio);
+            }
+
+            // Selection region
+            if (selectionStart !== null && selectionEnd !== null) {
+                const sX = (Math.min(selectionStart, selectionEnd) / audioBuffer.duration) * width;
+                const eX = (Math.max(selectionStart, selectionEnd) / audioBuffer.duration) * width;
+                ctx.fillStyle = 'rgba(225, 29, 72, 0.15)';
+                ctx.fillRect(sX, 0, eX - sX, height);
+
+                ctx.save();
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = accentColor;
+                ctx.strokeStyle = accentColor;
+                ctx.lineWidth = 2 * window.devicePixelRatio;
+                ctx.beginPath();
+                ctx.moveTo(sX, 0); ctx.lineTo(sX, height);
+                ctx.moveTo(eX, 0); ctx.lineTo(eX, height);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // Playhead
+            const currentPlaybackTime = getCurrentPlaybackTime();
+            const playheadX = (currentPlaybackTime / audioBuffer.duration) * width;
+            ctx.save();
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = accentColor;
+            ctx.strokeStyle = accentColor;
+            ctx.lineWidth = 2 * window.devicePixelRatio;
+            ctx.beginPath();
+            ctx.moveTo(playheadX, 0);
+            ctx.lineTo(playheadX, height);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawRuler() {
+            const canvas = rulerCanvas;
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#0d0e12';
+            ctx.fillRect(0, 0, width, height);
+
+            if (!audioBuffer && !isRecording) return;
+
+            const duration = audioBuffer ? audioBuffer.duration : 10.0;
+            ctx.fillStyle = '#64748b';
+            ctx.strokeStyle = '#222530';
+            ctx.font = `${10 * window.devicePixelRatio}px monospace`;
+            ctx.lineWidth = 1 * window.devicePixelRatio;
+
+            let interval = 1.0;
+            if (duration < 2) interval = 0.1;
+            else if (duration > 60) interval = 5.0;
+            if (zoomScale > 3) interval /= 2;
+
+            for (let t = 0; t <= duration; t += interval) {
+                const x = (t / duration) * width;
+                ctx.beginPath();
+                ctx.moveTo(x, height);
+                ctx.lineTo(x, height - 8 * window.devicePixelRatio);
+                ctx.stroke();
+
+                const timeStr = formatTime(t).slice(3, 9);
+                ctx.fillText(timeStr, x + 4 * window.devicePixelRatio, height - 10 * window.devicePixelRatio);
+            }
+        }
+
+        // --- Selection Gain Badge Position & Hover Slider Logic ---
+        function updateSelectionBadgePosition() {
+            if (!audioBuffer || selectionStart === null || selectionEnd === null) {
+                selectionGainContainer.classList.add('hidden');
+                return;
+            }
+            const wrapperWidth = canvasWrapper.clientWidth;
+            const sX = (Math.max(selectionStart, selectionEnd) / audioBuffer.duration) * wrapperWidth;
+            
+            selectionGainContainer.style.left = `${Math.min(sX + 4, wrapperWidth - 160)}px`;
+            selectionGainContainer.style.top = `6px`;
+            selectionGainContainer.classList.remove('hidden');
+        }
+
+        function captureOriginalSelectionSamples() {
+            if (!audioBuffer || selectionStart === null || selectionEnd === null) return;
+            const s1 = Math.min(selectionStart, selectionEnd);
+            const s2 = Math.max(selectionStart, selectionEnd);
+            const sampleRate = audioBuffer.sampleRate;
+            const startFrame = Math.floor(s1 * sampleRate);
+            const endFrame = Math.floor(s2 * sampleRate);
+
+            originalSelectionSamples = [];
+            for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+                originalSelectionSamples.push(audioBuffer.getChannelData(c).slice(startFrame, endFrame));
+            }
+            selectionGainSlider.value = "1";
+            gainBadgeLabel.textContent = "GAIN: 1.0x";
+            gainSliderVal.textContent = "1.0x";
+        }
+
+        selectionGainSlider.addEventListener('input', (e) => {
+            const gain = parseFloat(e.target.value);
+            gainBadgeLabel.textContent = `GAIN: ${gain.toFixed(2)}x`;
+            gainSliderVal.textContent = `${gain.toFixed(2)}x`;
+            applySelectionGainFromOriginal(gain);
+        });
+
+        function applySelectionGainFromOriginal(gain) {
+            if (!audioBuffer || !originalSelectionSamples || selectionStart === null || selectionEnd === null) return;
+            const s1 = Math.min(selectionStart, selectionEnd);
+            const s2 = Math.max(selectionStart, selectionEnd);
+            const sampleRate = audioBuffer.sampleRate;
+            const startFrame = Math.floor(s1 * sampleRate);
+
+            for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+                if (activeChannels[c] && originalSelectionSamples[c]) {
+                    const data = audioBuffer.getChannelData(c);
+                    const orig = originalSelectionSamples[c];
+                    for (let i = 0; i < orig.length && (startFrame + i) < data.length; i++) {
+                        data[startFrame + i] = Math.max(-1.0, Math.min(1.0, orig[i] * gain));
+                    }
+                }
+            }
+            drawWaveform();
+        }
+
+        // --- Pagination & Viewport Scrolling Helpers ---
+        function ensurePlayheadVisible(time) {
+            if (!audioBuffer) return;
+            const wrapperWidth = canvasWrapper.clientWidth;
+            const scrollAreaWidth = waveformScrollArea.clientWidth;
+            const playheadX = (time / audioBuffer.duration) * wrapperWidth;
+            const currentScroll = waveformScrollArea.scrollLeft;
+
+            if (playheadX < currentScroll || playheadX > currentScroll + scrollAreaWidth) {
+                waveformScrollArea.scrollLeft = Math.max(0, playheadX - (scrollAreaWidth / 2));
+            }
+        }
+
+        // --- Mouse Wheel & Trackpad Zoom Centered at Cursor ---
+        waveformScrollArea.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const rect = waveformScrollArea.getBoundingClientRect();
+            const scrollLeft = waveformScrollArea.scrollLeft;
+            const cursorX = e.clientX - rect.left + scrollLeft;
+            const totalWidthBefore = waveformScrollArea.scrollWidth;
+            const cursorRatio = cursorX / totalWidthBefore;
+
+            const delta = e.deltaY;
+            const zoomFactor = delta < 0 ? 1.15 : 0.85;
+            let newZoom = Math.max(1.0, Math.min(zoomScale * zoomFactor, 20.0));
+
+            if (newZoom !== zoomScale) {
+                zoomScale = newZoom;
+                zoomLevelDisplay.textContent = `${zoomScale.toFixed(1)}x`;
+                mobZoomLabel.textContent = `${zoomScale.toFixed(1)}x`;
+                resizeCanvases();
+
+                const totalWidthAfter = waveformScrollArea.scrollWidth;
+                waveformScrollArea.scrollLeft = (cursorRatio * totalWidthAfter) - (e.clientX - rect.left);
+            }
+        }, { passive: false });
+
+        // --- Playback Engine ---
+        function getCurrentPlaybackTime() {
+            if (!isPlaying) return playbackOffset;
+            const ctx = getAudioContext();
+            let elapsed = (ctx.currentTime - playbackStartTime) + playbackOffset;
+
+            if (selectionStart !== null && selectionEnd !== null) {
+                const sStart = Math.min(selectionStart, selectionEnd);
+                const sEnd = Math.max(selectionStart, selectionEnd);
+                const loopDuration = sEnd - sStart;
+                
+                if (loopDuration > 0) {
+                    if (isLooping) {
+                        if (elapsed >= sEnd || elapsed < sStart) {
+                            playbackOffset = sStart;
+                            playbackStartTime = ctx.currentTime;
+                            elapsed = sStart;
+                        }
+                    } else {
+                        if (elapsed >= sEnd) {
+                            pauseAudio();
+                            playbackOffset = sEnd;
+                            return sEnd;
+                        }
+                    }
+                }
+            } else if (audioBuffer && elapsed >= audioBuffer.duration) {
+                stopAudio();
+                return 0;
+            }
+            return elapsed;
+        }
+
+        function playAudio() {
+            if (!audioBuffer) {
+                showMessage("Please load an audio file first.");
+                return;
+            }
+            const ctx = getAudioContext();
+            if (isPlaying) {
+                pauseAudio();
+                return;
+            }
+
+            sourceNode = ctx.createBufferSource();
+            sourceNode.buffer = audioBuffer;
+            
+            if (selectionStart !== null && selectionEnd !== null) {
+                const sStart = Math.min(selectionStart, selectionEnd);
+                const sEnd = Math.max(selectionStart, selectionEnd);
+                
+                if (isLooping) {
+                    sourceNode.loop = true;
+                    sourceNode.loopStart = sStart;
+                    sourceNode.loopEnd = sEnd;
+                } else {
+                    sourceNode.loop = false;
+                }
+
+                if (playbackOffset < sStart || playbackOffset >= sEnd) {
+                    playbackOffset = sStart;
+                }
+            } else {
+                sourceNode.loop = isLooping;
+            }
+
+            const gainNode = ctx.createGain();
+            gainNode.gain.value = parseFloat(volumeSlider.value);
+
+            sourceNode.connect(gainNode);
+            gainNode.connect(ctx.destination);
+
+            playbackStartTime = ctx.currentTime;
+            
+            if (playbackOffset >= audioBuffer.duration) {
+                playbackOffset = (selectionStart !== null) ? Math.min(selectionStart, selectionEnd) : 0;
+            }
+
+            sourceNode.start(0, playbackOffset);
+            isPlaying = true;
+
+            playText.textContent = "PAUSE";
+            btnPlay.classList.add('bg-studio-accentHover');
+
+            function updateLoop() {
+                if (!isPlaying) return;
+                const currentT = getCurrentPlaybackTime();
+                timecodeDisplay.textContent = formatTime(currentT);
+                ensurePlayheadVisible(currentT);
+                drawWaveform();
+                animationFrameId = requestAnimationFrame(updateLoop);
+            }
+            animationFrameId = requestAnimationFrame(updateLoop);
+
+            sourceNode.onended = () => {
+                if (isPlaying && !isLooping) {
+                    stopAudio();
+                }
+            };
+        }
+
+        function pauseAudio() {
+            if (!isPlaying) return;
+            const ctx = getAudioContext();
+            playbackOffset = (ctx.currentTime - playbackStartTime) + playbackOffset;
+            if (sourceNode) {
+                try { sourceNode.stop(); } catch(e){}
+                sourceNode.disconnect();
+            }
+            isPlaying = false;
+            cancelAnimationFrame(animationFrameId);
+            playText.textContent = "PLAY";
+            btnPlay.classList.remove('bg-studio-accentHover');
+            drawWaveform();
+        }
+
+        function stopAudio() {
+            if (sourceNode) {
+                try { sourceNode.stop(); } catch(e){}
+                sourceNode.disconnect();
+            }
+            isPlaying = false;
+            cancelAnimationFrame(animationFrameId);
+            playbackOffset = (selectionStart !== null) ? Math.min(selectionStart, selectionEnd) : 0;
+            timecodeDisplay.textContent = formatTime(playbackOffset);
+            playText.textContent = "PLAY";
+            btnPlay.classList.remove('bg-studio-accentHover');
+            drawWaveform();
+        }
+
+        // --- Editing Operations ---
+        editCut.addEventListener('click', () => {
+            if (!audioBuffer || selectionStart === null || selectionEnd === null) {
+                showMessage("Select a region to cut.");
+                return;
+            }
+            saveStateToUndo();
+            const s1 = Math.min(selectionStart, selectionEnd);
+            const s2 = Math.max(selectionStart, selectionEnd);
+            const sampleRate = audioBuffer.sampleRate;
+            const startFrame = Math.floor(s1 * sampleRate);
+            const endFrame = Math.floor(s2 * sampleRate);
+
+            const channels = audioBuffer.numberOfChannels;
+            clipboardBuffer = audioCtx.createBuffer(channels, endFrame - startFrame, sampleRate);
+            for (let c = 0; c < channels; c++) {
+                clipboardBuffer.copyToChannel(audioBuffer.getChannelData(c).slice(startFrame, endFrame), c);
+            }
+
+            const newLen = audioBuffer.length - (endFrame - startFrame);
+            const newBuf = audioCtx.createBuffer(channels, Math.max(1, newLen), sampleRate);
+            for (let c = 0; c < channels; c++) {
+                const orig = audioBuffer.getChannelData(c);
+                const dest = newBuf.getChannelData(c);
+                if (activeChannels[c]) {
+                    dest.set(orig.slice(0, startFrame), 0);
+                    dest.set(orig.slice(endFrame), startFrame);
+                } else {
+                    dest.set(orig, 0);
+                }
+            }
+
+            audioBuffer = newBuf;
+            selectionStart = null;
+            selectionEnd = null;
+            isLooping = false;
+            loopStatus.textContent = "LOOP: OFF";
+            updateDurationDisplay();
+            resizeCanvases();
+            showMessage("Cut active side selection.");
+        });
+
+        editCopy.addEventListener('click', () => {
+            if (!audioBuffer || selectionStart === null || selectionEnd === null) {
+                showMessage("Select a region to copy.");
+                return;
+            }
+            const s1 = Math.min(selectionStart, selectionEnd);
+            const s2 = Math.max(selectionStart, selectionEnd);
+            const sampleRate = audioBuffer.sampleRate;
+            const startFrame = Math.floor(s1 * sampleRate);
+            const endFrame = Math.floor(s2 * sampleRate);
+
+            const channels = audioBuffer.numberOfChannels;
+            clipboardBuffer = audioCtx.createBuffer(channels, endFrame - startFrame, sampleRate);
+            for (let c = 0; c < channels; c++) {
+                if (activeChannels[c]) {
+                    clipboardBuffer.copyToChannel(audioBuffer.getChannelData(c).slice(startFrame, endFrame), c);
+                }
+            }
+            showMessage("Copied active side selection to clipboard.");
+        });
+
+        editPaste.addEventListener('click', () => {
+            if (!audioBuffer || !clipboardBuffer) {
+                showMessage("Clipboard is empty or no audio loaded.");
+                return;
+            }
+            saveStateToUndo();
+            const pasteFrame = Math.floor(playbackOffset * audioBuffer.sampleRate);
+            const channels = audioBuffer.numberOfChannels;
+            const sampleRate = audioBuffer.sampleRate;
+            const clipLen = clipboardBuffer.length;
+
+            const newBuf = audioCtx.createBuffer(channels, audioBuffer.length + clipLen, sampleRate);
+            for (let c = 0; c < channels; c++) {
+                const orig = audioBuffer.getChannelData(c);
+                const clip = clipboardBuffer.getChannelData(c);
+                const dest = newBuf.getChannelData(c);
+                if (activeChannels[c]) {
+                    dest.set(orig.slice(0, pasteFrame), 0);
+                    dest.set(clip, pasteFrame);
+                    dest.set(orig.slice(pasteFrame), pasteFrame + clipLen);
+                } else {
+                    dest.set(orig, 0);
+                }
+            }
+
+            audioBuffer = newBuf;
+            updateDurationDisplay();
+            resizeCanvases();
+            showMessage("Pasted clipboard to active side at playhead.");
+        });
+
+        editFadeIn.addEventListener('click', () => {
+            if (!audioBuffer || selectionStart === null || selectionEnd === null) {
+                showMessage("Select a region for Fade In.");
+                return;
+            }
+            saveStateToUndo();
+            const s1 = Math.min(selectionStart, selectionEnd);
+            const s2 = Math.max(selectionStart, selectionEnd);
+            const sampleRate = audioBuffer.sampleRate;
+            const startFrame = Math.floor(s1 * sampleRate);
+            const endFrame = Math.floor(s2 * sampleRate);
+            const len = endFrame - startFrame;
+
+            for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+                if (activeChannels[c]) {
+                    const data = audioBuffer.getChannelData(c);
+                    for (let i = 0; i < len; i++) {
+                        const factor = i / len;
+                        data[startFrame + i] *= factor;
+                    }
+                }
+            }
+            drawWaveform();
+            showMessage("Applied Fade In to active side.");
+        });
+
+        editFadeOut.addEventListener('click', () => {
+            if (!audioBuffer || selectionStart === null || selectionEnd === null) {
+                showMessage("Select a region for Fade Out.");
+                return;
+            }
+            saveStateToUndo();
+            const s1 = Math.min(selectionStart, selectionEnd);
+            const s2 = Math.max(selectionStart, selectionEnd);
+            const sampleRate = audioBuffer.sampleRate;
+            const startFrame = Math.floor(s1 * sampleRate);
+            const endFrame = Math.floor(s2 * sampleRate);
+            const len = endFrame - startFrame;
+
+            for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+                if (activeChannels[c]) {
+                    const data = audioBuffer.getChannelData(c);
+                    for (let i = 0; i < len; i++) {
+                        const factor = 1 - (i / len);
+                        data[startFrame + i] *= factor;
+                    }
+                }
+            }
+            drawWaveform();
+            showMessage("Applied Fade Out to active side.");
+        });
+
+        editFx.addEventListener('click', () => fxModal.classList.remove('hidden'));
+        btnCloseFx.addEventListener('click', () => fxModal.classList.add('hidden'));
+        btnApplyFx.addEventListener('click', () => {
+            fxModal.classList.add('hidden');
+            showMessage("FX processor applied to active side.");
+        });
+
+        // --- Color Theme Wheel Modal ---
+        editTheme.addEventListener('click', () => {
+            themeModal.classList.remove('hidden');
+            drawColorWheel();
+        });
+        btnCloseTheme.addEventListener('click', () => themeModal.classList.add('hidden'));
+
+        function drawColorWheel() {
+            const ctx = colorWheelCanvas.getContext('2d');
+            const radius = colorWheelCanvas.width / 2;
+            ctx.clearRect(0, 0, colorWheelCanvas.width, colorWheelCanvas.height);
+
+            for (let angle = 0; angle < 360; angle++) {
+                const startAngle = (angle - 2) * Math.PI / 180;
+                const endAngle = (angle + 2) * Math.PI / 180;
+                ctx.beginPath();
+                ctx.moveTo(radius, radius);
+                ctx.arc(radius, radius, radius, startAngle, endAngle);
+                ctx.closePath();
+                const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
+                grad.addColorStop(0, 'white');
+                grad.addColorStop(1, `hsl(${angle}, 100%, 50%)`);
+                ctx.fillStyle = grad;
+                ctx.fill();
+            }
+        }
+
+        let selectedThemeColor = '#e11d48';
+        colorWheelCanvas.addEventListener('click', (e) => {
+            const rect = colorWheelCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const ctx = colorWheelCanvas.getContext('2d');
+            const pixel = ctx.getImageData(x * window.devicePixelRatio, y * window.devicePixelRatio, 1, 1).data;
+            selectedThemeColor = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1)}`;
+        });
+
+        document.querySelectorAll('.theme-preset').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                selectedThemeColor = e.target.getAttribute('data-color');
+            });
+        });
+
+        btnApplyTheme.addEventListener('click', () => {
+            document.documentElement.style.setProperty('--theme-accent', selectedThemeColor);
+            document.documentElement.style.setProperty('--theme-accent-hover', selectedThemeColor);
+            document.documentElement.style.setProperty('--theme-accent-glow', selectedThemeColor + '55');
+            document.documentElement.style.setProperty('--theme-waveform', selectedThemeColor);
+            themeModal.classList.add('hidden');
+            drawWaveform();
+            drawRuler();
+            updateGutterUI();
+        });
+
+        // --- Real-time Waveform Painting While Recording ---
+        async function toggleRecord() {
+            if (isRecording) {
+                stopRecording();
+                return;
+            }
+            try {
+                liveStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                const ctx = getAudioContext();
+                const source = ctx.createMediaStreamSource(liveStream);
+                liveAnalyser = ctx.createAnalyser();
+                liveAnalyser.fftSize = 2048;
+                source.connect(liveAnalyser);
+
+                audioChunks = [];
+                livePCMBuffer = [];
+                mediaRecorder = new MediaRecorder(liveStream);
+                recordingStartTime = Date.now();
+
+                mediaRecorder.ondataavailable = e => {
+                    if (e.data.size > 0) audioChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const arrayBuffer = await blob.arrayBuffer();
+                    try {
+                        saveStateToUndo();
+                        audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+                        fileLabel.textContent = "Mic_Recording.wav";
+                        updateDurationDisplay();
+                        selectionStart = null;
+                        selectionEnd = null;
+                        playbackOffset = 0;
+                        updateGutterUI();
+                        resizeCanvases();
+                        showMessage("Microphone recording captured!");
+                    } catch(err) {
+                        showMessage("Failed to decode recording.");
+                    }
+                    if (liveStream) {
+                        liveStream.getTracks().forEach(t => t.stop());
+                    }
+                };
+
+                mediaRecorder.start(100);
+                isRecording = true;
+                btnRecord.classList.add('bg-studio-danger/20', 'border-studio-danger');
+                recordDot.classList.add('animate-ping', 'bg-studio-danger');
+                recText.textContent = "STOP REC";
+
+                const dataArray = new Float32Array(liveAnalyser.fftSize);
+
+                function paintLive() {
+                    if (!isRecording) return;
+                    liveAnalyser.getFloatTimeDomainData(dataArray);
+                    for (let i = 0; i < dataArray.length; i += 4) {
+                        livePCMBuffer.push(dataArray[i]);
+                        if (livePCMBuffer.length > 44100 * 15) {
+                            livePCMBuffer.shift();
+                        }
+                    }
+                    const elapsed = (Date.now() - recordingStartTime) / 1000;
+                    timecodeDisplay.textContent = formatTime(elapsed);
+                    drawWaveform();
+                    drawRuler();
+                    liveAnimFrame = requestAnimationFrame(paintLive);
+                }
+                liveAnimFrame = requestAnimationFrame(paintLive);
+
+            } catch(err) {
+                showMessage("Microphone access denied or unavailable.");
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                cancelAnimationFrame(liveAnimFrame);
+                mediaRecorder.stop();
+                isRecording = false;
+                btnRecord.classList.remove('bg-studio-danger/20', 'border-studio-danger');
+                recordDot.classList.remove('animate-ping');
+                recText.textContent = "REC";
+            }
+        }
+
+        btnRecord.addEventListener('click', toggleRecord);
+
+        // --- File Upload Handling ---
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            fileLabel.textContent = file.name;
+            const arrayBuffer = await file.arrayBuffer();
+            const ctx = getAudioContext();
+            try {
+                saveStateToUndo();
+                audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+                updateDurationDisplay();
+                selectionStart = null;
+                selectionEnd = null;
+                playbackOffset = 0;
+                zoomScale = 1.0;
+                zoomLevelDisplay.textContent = "1.0x";
+                mobZoomLabel.textContent = "1.0x";
+                updateGutterUI();
+                resizeCanvases();
+                showMessage(`Loaded "${file.name}" (${audioBuffer.numberOfChannels === 2 ? 'Stereo' : 'Mono'}) successfully!`);
+            } catch(err) {
+                showMessage("Error decoding audio file.");
+            }
+        });
+
+        // --- Selection & Auto-Looping ---
+        waveformCanvas.addEventListener('pointerdown', (e) => {
+            if (!audioBuffer) return;
+            const rect = waveformCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const time = (x / rect.width) * audioBuffer.duration;
+
+            isDraggingSelection = true;
+            selectionStart = time;
+            selectionEnd = time;
+            
+            isLooping = true;
+            loopStatus.textContent = "LOOP: ON";
+            btnLoop.classList.add('text-studio-accent', 'border-studio-accent');
+            mobBtnLoop.classList.add('text-studio-accent');
+
+            playbackOffset = time;
+            timecodeDisplay.textContent = formatTime(playbackOffset);
+            
+            if (isPlaying) {
+                pauseAudio();
+                playAudio();
+            }
+            drawWaveform();
+            updateSelectionBadgePosition();
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!isDraggingSelection || !audioBuffer) return;
+            const rect = waveformCanvas.getBoundingClientRect();
+            const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+            const time = (x / rect.width) * audioBuffer.duration;
+            selectionEnd = time;
+            drawWaveform();
+            updateSelectionBadgePosition();
+        });
+
+        window.addEventListener('pointerup', () => {
+            if (isDraggingSelection) {
+                isDraggingSelection = false;
+                if (selectionStart !== null && Math.abs(selectionEnd - selectionStart) < 0.05) {
+                    selectionStart = null;
+                    selectionEnd = null;
+                    isLooping = false;
+                    loopStatus.textContent = "LOOP: OFF";
+                    btnLoop.classList.remove('text-studio-accent', 'border-studio-accent');
+                    mobBtnLoop.classList.remove('text-studio-accent');
+                    selectionGainContainer.classList.add('hidden');
+                } else {
+                    captureOriginalSelectionSamples();
+                }
+                drawWaveform();
+                updateSelectionBadgePosition();
+            }
+        });
+
+        rulerCanvas.addEventListener('pointerdown', (e) => {
+            if (!audioBuffer) return;
+            const rect = rulerCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const time = (x / rect.width) * audioBuffer.duration;
+            playbackOffset = Math.max(0, Math.min(time, audioBuffer.duration));
+            timecodeDisplay.textContent = formatTime(playbackOffset);
+            ensurePlayheadVisible(playbackOffset);
+            if (isPlaying) {
+                pauseAudio();
+                playAudio();
+            }
+            drawWaveform();
+        });
+
+        // --- Zoom & Transport Controls ---
+        function setZoom(newScale) {
+            zoomScale = Math.max(1.0, Math.min(newScale, 20.0));
+            zoomLevelDisplay.textContent = `${zoomScale.toFixed(1)}x`;
+            mobZoomLabel.textContent = `${zoomScale.toFixed(1)}x`;
+            resizeCanvases();
+        }
+
+        btnZoomIn.addEventListener('click', () => setZoom(zoomScale + 1.0));
+        btnZoomOut.addEventListener('click', () => setZoom(zoomScale - 1.0));
+        mobZoomIn.addEventListener('click', () => setZoom(zoomScale + 1.0));
+        mobZoomOut.addEventListener('click', () => setZoom(zoomScale - 1.0));
+
+        function toggleLoop() {
+            isLooping = !isLooping;
+            if (isLooping) {
+                loopStatus.textContent = "LOOP: ON";
+                btnLoop.classList.add('text-studio-accent', 'border-studio-accent');
+                mobBtnLoop.classList.add('text-studio-accent');
+                if (selectionStart === null && audioBuffer) {
+                    selectionStart = 0;
+                    selectionEnd = audioBuffer.duration;
+                }
+            } else {
+                loopStatus.textContent = "LOOP: OFF";
+                btnLoop.classList.remove('text-studio-accent', 'border-studio-accent');
+                mobBtnLoop.classList.remove('text-studio-accent');
+            }
+            if (isPlaying) { pauseAudio(); playAudio(); }
+        }
+
+        btnLoop.addEventListener('click', toggleLoop);
+        mobBtnLoop.addEventListener('click', toggleLoop);
+        btnPlay.addEventListener('click', playAudio);
+        btnStop.addEventListener('click', stopAudio);
+
+        // --- Export WAV ---
+        function exportWAV() {
+            if (!audioBuffer) {
+                showMessage("No audio buffer to export.");
+                return;
+            }
+            let startFrame = 0;
+            let endFrame = audioBuffer.length;
+            if (selectionStart !== null && selectionEnd !== null) {
+                const s1 = Math.min(selectionStart, selectionEnd);
+                const s2 = Math.max(selectionStart, selectionEnd);
+                startFrame = Math.floor(s1 * audioBuffer.sampleRate);
+                endFrame = Math.floor(s2 * audioBuffer.sampleRate);
+                if (endFrame <= startFrame) { startFrame = 0; endFrame = audioBuffer.length; }
+            }
+
+            const numChannels = audioBuffer.numberOfChannels;
+            const trimmedChannels = [];
+            for (let c = 0; c < numChannels; c++) {
+                trimmedChannels.push(audioBuffer.getChannelData(c).slice(startFrame, endFrame));
+            }
+
+            const wavBuffer = channelsToWave(trimmedChannels, audioBuffer.sampleRate, numChannels);
+            const blob = new Blob([wavBuffer], { type: 'audio/wav' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'Waveform_Studio_Export.wav';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 100);
+            showMessage("Exported WAV successfully!");
+        }
+
+        menuExport.addEventListener('click', exportWAV);
+
+        function channelsToWave(channels, sampleRate, numChannels) {
+            const length = channels[0].length;
+            const blockAlign = numChannels * 2;
+            const byteRate = sampleRate * blockAlign;
+            const dataSize = length * blockAlign;
+            const buffer = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(buffer);
+
+            function writeString(view, offset, string) {
+                for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+            }
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + dataSize, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, byteRate, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, 16, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, dataSize, true);
+
+            let offset = 44;
+            for (let i = 0; i < length; i++) {
+                for (let c = 0; c < numChannels; c++) {
+                    let s = Math.max(-1, Math.min(1, channels[c][i]));
+                    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+                    offset += 2;
+                }
+            }
+            return buffer;
+        }
+
+        menuClear.addEventListener('click', () => {
+            stopAudio();
+            saveStateToUndo();
+            audioBuffer = null;
+            selectionStart = null;
+            selectionEnd = null;
+            playbackOffset = 0;
+            fileLabel.textContent = "No file loaded";
+            updateDurationDisplay();
+            updateGutterUI();
+            resizeCanvases();
+            showMessage("Project cleared.");
+        });
+
+        // --- Keyboard Shortcuts ---
+        window.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                playAudio();
+            } else if (e.key.toLowerCase() === 'r') {
+                e.preventDefault();
+                toggleRecord();
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                if (!audioBuffer) return;
+                const scrubStep = audioBuffer.duration * 0.02;
+                playbackOffset = Math.max(0, playbackOffset - scrubStep);
+                timecodeDisplay.textContent = formatTime(playbackOffset);
+                ensurePlayheadVisible(playbackOffset);
+                if (isPlaying) { pauseAudio(); playAudio(); }
+                drawWaveform();
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                if (!audioBuffer) return;
+                const scrubStep = audioBuffer.duration * 0.02;
+                playbackOffset = Math.min(audioBuffer.duration, playbackOffset + scrubStep);
+                timecodeDisplay.textContent = formatTime(playbackOffset);
+                ensurePlayheadVisible(playbackOffset);
+                if (isPlaying) { pauseAudio(); playAudio(); }
+                drawWaveform();
+            } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                editUndo.click();
+            } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+                e.preventDefault();
+                editRedo.click();
+            }
+        });
+
+        btnHelp.addEventListener('click', () => helpModal.classList.remove('hidden'));
+        btnCloseHelp.addEventListener('click', () => helpModal.classList.add('hidden'));
+
+        // --- Init Startup ---
+        window.addEventListener('load', () => {
+            resizeCanvases();
+            updateGutterUI();
+        });
+    </script>
+</body>
+</html>
