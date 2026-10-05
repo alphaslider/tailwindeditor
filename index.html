@@ -16,7 +16,7 @@
                             800: '#15171f',
                             700: '#222530',
                             600: '#313645',
-                            accent: 'var(--theme-accent, #e11d48)', // default crimson black metal
+                            accent: 'var(--theme-accent, #e11d48)',
                             accentHover: 'var(--theme-accent-hover, #be123c)',
                             danger: '#ef4444',
                             success: '#10b981',
@@ -61,7 +61,6 @@
         .glow-accent {
             box-shadow: 0 0 20px var(--theme-accent-glow);
         }
-        /* Rubber / Matte dark texture feel */
         .rubber-panel {
             background: #0d0e12;
             box-shadow: inset 0 1px 2px rgba(255,255,255,0.04), 0 4px 12px rgba(0,0,0,0.6);
@@ -71,12 +70,11 @@
 </head>
 <body class="h-full bg-studio-950 text-slate-200 font-mono flex flex-col overflow-hidden">
 
-    <!-- Top Menu Bar: File, Edit, Status (No Buttons, Clean Vertical Separators) -->
+    <!-- Top Menu Bar -->
     <header class="bg-studio-900 border-b border-studio-800 px-3 py-2.5 flex items-center justify-between shrink-0 select-none rubber-panel">
         <div class="flex items-center space-x-3">
             <div class="w-2.5 h-2.5 rounded-full bg-studio-accent animate-pulse shadow-[0_0_10px_var(--theme-accent)]"></div>
             
-            <!-- FILE Menu (Dropdown Link / Label) -->
             <div class="relative">
                 <button id="menu-file-btn" class="text-xs font-bold px-2 py-1 rounded hover:bg-studio-800 text-slate-300 hover:text-white transition tracking-wider">FILE</button>
                 <div id="menu-file-dropdown" class="absolute left-0 mt-1 w-44 bg-studio-900 border border-studio-700 rounded-lg shadow-2xl py-1.5 hidden z-50 text-xs rubber-panel">
@@ -90,10 +88,8 @@
                 </div>
             </div>
 
-            <!-- Vertical Separator -->
             <div class="w-px h-4 bg-studio-700"></div>
 
-            <!-- EDIT Menu (Dropdown Link / Label) -->
             <div class="relative">
                 <button id="menu-edit-btn" class="text-xs font-bold px-2 py-1 rounded hover:bg-studio-800 text-slate-300 hover:text-white transition tracking-wider">EDIT</button>
                 <div id="menu-edit-dropdown" class="absolute left-0 mt-1 w-48 bg-studio-900 border border-studio-700 rounded-lg shadow-2xl py-1.5 hidden z-50 text-xs rubber-panel">
@@ -113,14 +109,13 @@
                 </div>
             </div>
 
-            <!-- Vertical Separator -->
             <div class="w-px h-4 bg-studio-700"></div>
 
             <span id="file-label" class="hidden md:inline text-xs bg-studio-800/80 text-slate-400 px-2.5 py-1 rounded border border-studio-700/60 truncate max-w-[180px]">No file loaded</span>
         </div>
 
         <div class="flex items-center space-x-3 text-xs text-slate-400">
-            <span id="sample-rate-info" class="hidden lg:inline">44.1kHz / Black Metal Studio</span>
+            <span id="sample-rate-info" class="hidden lg:inline">44.1kHz / iOS Safe</span>
             <button id="btn-help" class="bg-studio-800/80 hover:bg-studio-700 text-slate-300 px-2.5 py-1 rounded border border-studio-700 transition">Help</button>
         </div>
     </header>
@@ -128,35 +123,29 @@
     <!-- Transport & Action Bar -->
     <section class="bg-studio-900/95 backdrop-blur border-b border-studio-800 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shrink-0 rubber-panel">
         <div class="flex items-center space-x-2">
-            <!-- Record Button -->
             <button id="btn-record" title="Record Microphone (R)" class="flex items-center space-x-1.5 bg-studio-800 hover:bg-studio-700 text-studio-danger border border-studio-700 px-3 py-2 rounded-lg font-bold text-xs transition active:scale-95 shadow-inner">
                 <span class="w-3 h-3 rounded-full bg-studio-danger inline-block" id="record-dot"></span>
                 <span class="hidden xs:inline" id="rec-text">REC</span>
             </button>
-            <!-- Play Button -->
             <button id="btn-play" title="Play / Pause (Space)" class="flex items-center space-x-1.5 bg-studio-accent hover:bg-studio-accentHover text-studio-950 px-4 py-2 rounded-lg font-bold text-xs transition active:scale-95 glow-accent">
                 <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                 <span id="play-text">PLAY</span>
             </button>
-            <!-- Stop Button -->
             <button id="btn-stop" title="Stop & Return to Start" class="flex items-center space-x-1 bg-studio-800 hover:bg-studio-700 text-slate-200 border border-studio-700 px-3 py-2 rounded-lg font-bold text-xs transition active:scale-95 shadow-inner">
                 <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
                 <span class="hidden xs:inline">STOP</span>
             </button>
-            <!-- Loop Toggle -->
             <button id="btn-loop" title="Toggle Loop Selection" class="flex items-center space-x-1 bg-studio-800 hover:bg-studio-700 text-slate-400 border border-studio-700 px-3 py-2 rounded-lg font-bold text-xs transition active:scale-95 shadow-inner">
                 <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
                 <span id="loop-status" class="text-[10px]">LOOP: OFF</span>
             </button>
         </div>
 
-        <!-- Timecode Display -->
         <div class="bg-studio-950 border border-studio-800 px-3 py-1.5 rounded-lg flex items-center space-x-2 shadow-inner">
             <span class="text-studio-accent font-bold text-sm tracking-widest drop-shadow-[0_0_8px_var(--theme-accent)]" id="timecode-display">00:00.000</span>
             <span class="text-slate-500 text-xs">/ <span id="duration-display">00:00.000</span></span>
         </div>
 
-        <!-- Zoom & Volume Controls -->
         <div class="flex items-center space-x-2">
             <div class="hidden md:flex items-center bg-studio-800 rounded-lg border border-studio-700 p-0.5 shadow-inner">
                 <button id="btn-zoom-out" title="Zoom Out" class="px-2 py-1 text-slate-300 hover:text-white text-xs font-bold">-</button>
@@ -170,9 +159,8 @@
         </div>
     </section>
 
-    <!-- Main Timeline Area with Left Gutter Channel Selector -->
+    <!-- Main Timeline Area -->
     <main class="flex-1 relative bg-studio-950 flex flex-col overflow-hidden" id="timeline-container">
-        <!-- Ruler Canvas Container -->
         <div class="flex bg-studio-900 border-b border-studio-800 shrink-0 h-8 rubber-panel">
             <div class="w-20 bg-studio-900 border-r border-studio-800 flex items-center justify-center text-[10px] text-slate-400 font-bold tracking-wider shrink-0" id="gutter-title-lbl">CHANNELS</div>
             <div class="flex-1 relative overflow-hidden">
@@ -180,9 +168,7 @@
             </div>
         </div>
 
-        <!-- Waveform Canvas Scroll/Pan Viewport with Left Gutter -->
         <div class="flex-1 flex overflow-hidden">
-            <!-- Left Gutter: Dynamic Mute/Active Selectors -->
             <div class="w-20 bg-studio-900 border-r border-studio-800 flex flex-col shrink-0 select-none z-10 rubber-panel" id="channel-gutter">
                 <div id="gutter-ch1" class="flex-1 border-b border-studio-800 flex flex-col items-center justify-center p-1">
                     <span class="text-[10px] text-slate-400 mb-1 font-bold" id="lbl-ch1">CH 1 (L)</span>
@@ -194,18 +180,15 @@
                 </div>
             </div>
 
-            <!-- Waveform Viewport -->
             <div class="flex-1 relative overflow-x-auto overflow-y-hidden" id="waveform-scroll-area">
                 <div id="canvas-wrapper" class="relative h-full min-w-full">
                     <canvas id="waveform-canvas" class="absolute top-0 left-0 h-full w-full cursor-crosshair"></canvas>
                     
-                    <!-- Floating Selection Gain Badge with Expandable Slider on Hover -->
                     <div id="selection-gain-container" class="absolute hidden z-30 select-none group">
                         <div id="selection-gain-badge" class="bg-studio-950/95 backdrop-blur border border-studio-accent px-2.5 py-1.5 rounded-lg shadow-2xl flex items-center space-x-2 cursor-pointer">
                             <svg class="w-3.5 h-3.5 text-studio-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                             <span class="text-[10px] text-slate-200 font-bold" id="gain-badge-label">GAIN: 1.0x</span>
                         </div>
-                        <!-- Hover Slider Popup -->
                         <div class="absolute left-0 mt-1 hidden group-hover:block bg-studio-900 border border-studio-700 p-2.5 rounded-lg shadow-2xl w-40 rubber-panel">
                             <div class="flex justify-between text-[10px] text-slate-400 mb-1">
                                 <span>Selection Gain</span>
@@ -218,7 +201,6 @@
             </div>
         </div>
 
-        <!-- Floating Quick Tools Mobile Bar -->
         <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-studio-900/90 backdrop-blur border border-studio-700 px-4 py-2 rounded-full shadow-2xl flex items-center space-x-4 md:hidden z-20 rubber-panel">
             <button id="mob-zoom-out" class="text-slate-300 font-bold px-2 py-1 text-sm">-</button>
             <span id="mob-zoom-label" class="text-xs text-studio-accent font-bold">1.0x</span>
@@ -228,7 +210,7 @@
         </div>
     </main>
 
-    <!-- Color Theme Wheel Modal -->
+    <!-- Theme Modal -->
     <div id="theme-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-studio-900 border border-studio-700 rounded-xl max-w-sm w-full p-6 relative shadow-2xl text-center rubber-panel">
             <button id="btn-close-theme" class="absolute top-4 right-4 text-slate-400 hover:text-white font-bold text-lg">&times;</button>
@@ -248,7 +230,7 @@
         </div>
     </div>
 
-    <!-- FX Processor Modal -->
+    <!-- FX Modal -->
     <div id="fx-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-studio-900 border border-studio-700 rounded-xl max-w-md w-full p-6 relative shadow-2xl rubber-panel">
             <button id="btn-close-fx" class="absolute top-4 right-4 text-slate-400 hover:text-white font-bold text-lg">&times;</button>
@@ -275,12 +257,8 @@
             <h2 class="text-lg font-bold text-studio-accent mb-3">Waveform Studio Guide</h2>
             <ul class="space-y-2 text-xs text-slate-300 mb-6">
                 <li class="flex items-start space-x-2">
-                    <span class="bg-studio-800 text-studio-accent px-1.5 py-0.5 rounded font-bold">BLACK METAL</span>
-                    <span>Ultra-smooth glowing anti-aliased waveforms with rubberized dark aesthetics.</span>
-                </li>
-                <li class="flex items-start space-x-2">
-                    <span class="bg-studio-800 text-studio-accent px-1.5 py-0.5 rounded font-bold">MENUS</span>
-                    <span>Clean vertical separators between FILE and EDIT text links.</span>
+                    <span class="bg-studio-800 text-studio-accent px-1.5 py-0.5 rounded font-bold">IOS SAFE</span>
+                    <span>Includes secondary HTML5 audio element fallback decoder to prevent iPhone format rejection errors.</span>
                 </li>
             </ul>
         </div>
@@ -316,13 +294,12 @@
         let playbackOffset = 0;
         let animationFrameId = null;
 
-        // Selection & Zoom & Channel Focus
         let selectionStart = null; 
         let selectionEnd = null;   
         let isDraggingSelection = false;
         let zoomScale = 1.0; 
 
-        let activeChannels = [true, true]; // [Left, Right]
+        let activeChannels = [true, true];
         let originalSelectionSamples = null;
 
         let clipboardBuffer = null;
@@ -528,7 +505,6 @@
             showMessage("Redo executed.");
         });
 
-        // --- Time Formatting ---
         function formatTime(seconds) {
             if (isNaN(seconds) || seconds < 0) seconds = 0;
             const mins = Math.floor(seconds / 60);
@@ -546,7 +522,6 @@
             durationDisplay.textContent = formatTime(audioBuffer.duration);
         }
 
-        // --- Canvas Sizing & Rendering (Ultra-Smooth Glowing Waveforms) ---
         function resizeCanvases() {
             const containerWidth = waveformScrollArea.clientWidth;
             const containerHeight = waveformScrollArea.clientHeight;
@@ -663,7 +638,6 @@
                 ctx.fillStyle = '#15171f';
                 ctx.fillRect(0, channelCenter - 0.5 * window.devicePixelRatio, width, 1 * window.devicePixelRatio);
 
-                // Glowing smooth path rendering
                 ctx.save();
                 ctx.shadowBlur = 10 * window.devicePixelRatio;
                 ctx.shadowColor = waveColor;
@@ -698,7 +672,6 @@
                 ctx.fillText(numChannels > 1 ? (c === 0 ? 'CH 1 (L) [ACTIVE]' : 'CH 2 (R) [ACTIVE]') : 'MONO [ACTIVE]', 10 * window.devicePixelRatio, (c * trackHeight) + 16 * window.devicePixelRatio);
             }
 
-            // Selection region
             if (selectionStart !== null && selectionEnd !== null) {
                 const sX = (Math.min(selectionStart, selectionEnd) / audioBuffer.duration) * width;
                 const eX = (Math.max(selectionStart, selectionEnd) / audioBuffer.duration) * width;
@@ -717,7 +690,6 @@
                 ctx.restore();
             }
 
-            // Playhead
             const currentPlaybackTime = getCurrentPlaybackTime();
             const playheadX = (currentPlaybackTime / audioBuffer.duration) * width;
             ctx.save();
@@ -767,7 +739,6 @@
             }
         }
 
-        // --- Selection Gain Badge Position & Hover Slider Logic ---
         function updateSelectionBadgePosition() {
             if (!audioBuffer || selectionStart === null || selectionEnd === null) {
                 selectionGainContainer.classList.add('hidden');
@@ -824,7 +795,6 @@
             drawWaveform();
         }
 
-        // --- Pagination & Viewport Scrolling Helpers ---
         function ensurePlayheadVisible(time) {
             if (!audioBuffer) return;
             const wrapperWidth = canvasWrapper.clientWidth;
@@ -837,7 +807,6 @@
             }
         }
 
-        // --- Mouse Wheel & Trackpad Zoom Centered at Cursor ---
         waveformScrollArea.addEventListener('wheel', (e) => {
             e.preventDefault();
             const rect = waveformScrollArea.getBoundingClientRect();
@@ -861,7 +830,6 @@
             }
         }, { passive: false });
 
-        // --- Playback Engine ---
         function getCurrentPlaybackTime() {
             if (!isPlaying) return playbackOffset;
             const ctx = getAudioContext();
@@ -1144,7 +1112,7 @@
             showMessage("FX processor applied to active side.");
         });
 
-        // --- Color Theme Wheel Modal ---
+        // --- Theme Modal ---
         editTheme.addEventListener('click', () => {
             themeModal.classList.remove('hidden');
             drawColorWheel();
@@ -1198,7 +1166,7 @@
             updateGutterUI();
         });
 
-        // --- Real-time Waveform Painting While Recording ---
+        // --- Recording ---
         async function toggleRecord() {
             if (isRecording) {
                 stopRecording();
@@ -1286,30 +1254,59 @@
 
         btnRecord.addEventListener('click', toggleRecord);
 
-        // --- File Upload Handling ---
+        // --- Robust iOS Safe File Upload Handler with HTML5 Audio Fallback ---
         fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
             fileLabel.textContent = file.name;
-            const arrayBuffer = await file.arrayBuffer();
             const ctx = getAudioContext();
+
             try {
-                saveStateToUndo();
-                audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-                updateDurationDisplay();
-                selectionStart = null;
-                selectionEnd = null;
-                playbackOffset = 0;
-                zoomScale = 1.0;
-                zoomLevelDisplay.textContent = "1.0x";
-                mobZoomLabel.textContent = "1.0x";
-                updateGutterUI();
-                resizeCanvases();
-                showMessage(`Loaded "${file.name}" (${audioBuffer.numberOfChannels === 2 ? 'Stereo' : 'Mono'}) successfully!`);
-            } catch(err) {
-                showMessage("Error decoding audio file.");
+                const arrayBuffer = await file.arrayBuffer();
+                try {
+                    saveStateToUndo();
+                    audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+                    finalizeFileLoad(file.name);
+                } catch (decodeErr) {
+                    // iOS Safari fallback decoder via HTML5 Audio element & OfflineAudioContext
+                    console.warn("Standard decodeAudioData failed, attempting iOS HTML5 fallback...", decodeErr);
+                    
+                    const audioEl = document.createElement('audio');
+                    audioEl.src = URL.createObjectURL(file);
+                    audioEl.crossOrigin = "anonymous";
+                    
+                    audioEl.oncanplaythrough = async () => {
+                        try {
+                            const response = await fetch(audioEl.src);
+                            const buf = await response.arrayBuffer();
+                            saveStateToUndo();
+                            audioBuffer = await ctx.decodeAudioData(buf);
+                            finalizeFileLoad(file.name);
+                        } catch (fallbackErr) {
+                            showMessage("iOS Decoding Error: Unsupported format codec.");
+                        }
+                    };
+                    audioEl.onerror = () => {
+                        showMessage("Failed to load file on iOS device.");
+                    };
+                }
+            } catch (err) {
+                showMessage("Error reading audio file stream.");
             }
         });
+
+        function finalizeFileLoad(name) {
+            updateDurationDisplay();
+            selectionStart = null;
+            selectionEnd = null;
+            playbackOffset = 0;
+            zoomScale = 1.0;
+            zoomLevelDisplay.textContent = "1.0x";
+            mobZoomLabel.textContent = "1.0x";
+            updateGutterUI();
+            resizeCanvases();
+            showMessage(`Loaded "${name}" (${audioBuffer.numberOfChannels === 2 ? 'Stereo' : 'Mono'}) successfully!`);
+        }
 
         // --- Selection & Auto-Looping ---
         waveformCanvas.addEventListener('pointerdown', (e) => {
@@ -1382,7 +1379,6 @@
             drawWaveform();
         });
 
-        // --- Zoom & Transport Controls ---
         function setZoom(newScale) {
             zoomScale = Math.max(1.0, Math.min(newScale, 20.0));
             zoomLevelDisplay.textContent = `${zoomScale.toFixed(1)}x`;
@@ -1418,7 +1414,6 @@
         btnPlay.addEventListener('click', playAudio);
         btnStop.addEventListener('click', stopAudio);
 
-        // --- Export WAV ---
         function exportWAV() {
             if (!audioBuffer) {
                 showMessage("No audio buffer to export.");
@@ -1507,7 +1502,6 @@
             showMessage("Project cleared.");
         });
 
-        // --- Keyboard Shortcuts ---
         window.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
             if (e.code === 'Space') {
@@ -1546,7 +1540,6 @@
         btnHelp.addEventListener('click', () => helpModal.classList.remove('hidden'));
         btnCloseHelp.addEventListener('click', () => helpModal.classList.add('hidden'));
 
-        // --- Init Startup ---
         window.addEventListener('load', () => {
             resizeCanvases();
             updateGutterUI();
